@@ -5,10 +5,6 @@ Modulity IDE Plugin is an extension for the Modulity package, bringing the power
 With this plugin, you can streamline your workflow by generating modules, services, repositories, and controllers through a simple right-click in the IDE's sidebar.
 It provides a convenient way to interact with Modulity's command-line instructions without leaving your development environment.
 
-
-<img src="docs/open_menu.png" width="49%" style="float: left; margin-right: 0.5%" />
-<img src="docs/create_service.png" width="49%" style="float: left" />
-<hr style="margin-top: 10px; width: 100%" />
 ## Features
 
 - **Seamless Integration:** Works within the IDE, integrating with the Laravel Artisan commands.
@@ -46,3 +42,5 @@ Contributions are welcome. Please fork the repository and submit a pull request 
 License
 Modulity IDE Plugin is open-sourced software licensed under the [MIT license](#).
 
+![create_service.png](docs%2Fcreate_service.png)
+![open_menu.png](docs%2Fopen_menu.png)
