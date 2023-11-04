@@ -1,7 +1,14 @@
 package com.kodarsiv.modulity.commands
 
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.OSProcessHandler
+import com.intellij.execution.process.ProcessAdapter
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
+import java.io.File
+import java.util.concurrent.CompletableFuture
 
 class GenerateService {
 
@@ -14,40 +21,82 @@ class GenerateService {
     }
 
     @Throws(IllegalStateException::class)
-    private fun checkArtisanAvailable() {
-        val process = Runtime.getRuntime().exec("php artisan --version")
-        if (process.waitFor() != 0) {
+    private fun checkArtisanAvailable(project: Project) {
+        val projectPath = project.basePath ?: throw IllegalStateException("Project base path is not available.")
+
+        val artisanFile = File("$projectPath/artisan")
+        if (!artisanFile.exists()) {
             throw IllegalStateException("Artisan is not available.")
         }
     }
 
     @Throws(IllegalStateException::class)
-    private fun checkCommandAvailable(command: String) {
-        val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "php artisan list --raw | grep $command"))
-        val reader = BufferedReader(InputStreamReader(process.inputStream))
-        val output = reader.readLine()
-        if (process.waitFor() != 0 || output == null || !output.contains(command)) {
-            throw IllegalStateException("The command '$command' is not available.")
+    private fun checkModulityInstalled(project: Project) {
+        val composerJsonFile = File(project.basePath + "/composer.json")
+        if (!composerJsonFile.exists()) {
+            throw IllegalStateException("composer.json not found.")
+        }
+
+        val composerJson = composerJsonFile.readText()
+        if (!composerJson.contains("\"tanerincode/modulity\"")) {
+            throw IllegalStateException("Modulity package is not installed.")
         }
     }
 
     @Throws(IllegalStateException::class)
-    private fun runArtisanCommand(command: String) {
-        val process = Runtime.getRuntime().exec("php artisan $command")
-        if (process.waitFor() != 0) {
-            throw IllegalStateException("Failed to run the command '$command'.")
+    fun runArtisanCommand(workingDirectory: String, modulityArgument: String, moduleName: String, fileName: String): CompletableFuture<String> {
+        val future = CompletableFuture<String>()
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            try {
+                val commandLine = GeneralCommandLine("php", "artisan", modulityArgument, moduleName, fileName)
+                    .withWorkDirectory(workingDirectory)
+
+                val processHandler = OSProcessHandler(commandLine)
+                val output = StringBuilder()
+
+                processHandler.addProcessListener(object : ProcessAdapter() {
+                    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                        output.append(event.text)
+                    }
+                })
+
+                processHandler.startNotify()
+                processHandler.waitFor()
+
+                if (output.toString().contains("Could not open input file: artisan")) {
+                    future.completeExceptionally(IllegalStateException("Failed to create service. Could not open input file: artisan"))
+                } else {
+                    future.complete(output.toString())
+                }
+            } catch (e: Exception) {
+                future.completeExceptionally(e)
+            }
         }
+
+        return future
     }
 
     @Throws(IllegalStateException::class)
-    fun generateService() {
+    fun generateService(project: Project, moduleName: String, serviceName: String) {
         checkPhpAvailable()
-        checkArtisanAvailable()
+        checkArtisanAvailable(project)
+        checkModulityInstalled(project)
 
-        val command = "modulity:service"
-        checkCommandAvailable(command)
-        runArtisanCommand(command)
+        val projectPath = project.basePath ?: throw IllegalStateException("Project base path is not available.")
+        val modulityArgument = "modulity:service"
 
-        println("The command '$command' ran successfully.")
+        val future = runArtisanCommand(projectPath, modulityArgument, moduleName, serviceName)
+
+        future.handle { result: String?, exception: Throwable? ->
+            if (exception != null) {
+                throw IllegalStateException("Failed to run the command: ${exception.message}")
+            } else {
+                println("The command successfully ran with output: $result")
+                null
+            }
+        }
+
     }
+
 }

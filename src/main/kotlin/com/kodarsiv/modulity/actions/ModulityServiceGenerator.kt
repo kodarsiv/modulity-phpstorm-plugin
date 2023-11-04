@@ -12,7 +12,7 @@ class ModulityServiceGenerator: AnAction() {
 
         val project = e.project ?: return
 
-        val dialog = GenericGenerator()
+        val dialog = GenericGenerator(project)
         dialog.fillModuleListWithFallback(project)
         dialog.minimumSize = Dimension(650, 250)
         dialog.title = "Generate Service with Modulity"
