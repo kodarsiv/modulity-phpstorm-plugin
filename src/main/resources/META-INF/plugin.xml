@@ -1,0 +1,27 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+  <id>com.modulity.modulity</id>
+  <name>Modulity</name>
+
+  <vendor email="tombastaner@gmail.com" url="https://github.com/kodarsiv">Kodarsiv</vendor>
+  <description>A automated module generator with modulity</description>
+  <depends>com.intellij.modules.platform</depends>
+  <extensions defaultExtensionNs="com.intellij">
+
+  </extensions>
+    <actions>
+        <group id="ModulityGeneratorGroup"
+               text="Generate with Modulity"
+               icon="AllIcons.Nodes.WebFolder" popup="true">
+          <add-to-group group-id="NewGroup" anchor="last" />
+
+
+          <action id="GenerateService"
+                  class="com.kodarsiv.modulity.actions.ModulityServiceGenerator"
+                  text="Generate a Service"
+                  description="A service generator for modulity users"
+                  icon="AllIcons.FileTypes.AddAny"/>
+
+        </group>
+    </actions>
+</idea-plugin>
